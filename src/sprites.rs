@@ -39,6 +39,39 @@ pub enum SpriteType {
 }
 
 impl SpriteType {
+    pub fn digit(digit: u32) -> Self {
+        match digit {
+            0 => SpriteType::Digit0,
+            1 => SpriteType::Digit1,
+            2 => SpriteType::Digit2,
+            3 => SpriteType::Digit3,
+            4 => SpriteType::Digit4,
+            5 => SpriteType::Digit5,
+            6 => SpriteType::Digit6,
+            7 => SpriteType::Digit7,
+            8 => SpriteType::Digit8,
+            9 => SpriteType::Digit9,
+            _ => { panic!("digit out of bounds"); }
+        }
+    }
+
+    pub fn block_digit(digit: u32) -> Self {
+        match digit {
+            0 => SpriteType::BlockEmptyDown,
+            1 => SpriteType::Block1,
+            2 => SpriteType::Block2,
+            3 => SpriteType::Block3,
+            4 => SpriteType::Block4,
+            5 => SpriteType::Block5,
+            6 => SpriteType::Block6,
+            7 => SpriteType::Block7,
+            8 => SpriteType::Block8,
+            _ => { panic!("digit out of bounds"); }
+        }
+    }
+}
+
+impl SpriteType {
     const SPRITESHEET_WIDTH: f32 = 139.;
     const SPRITESHEET_HEIGHT: f32 = 84.;
 
@@ -92,37 +125,6 @@ impl SpriteType {
     fn size(&self) -> Vec2 {
         let (_x, _y, w, h) = self.pixels();
         vec2(w as f32, h as f32)
-    }
-
-    fn digit(digit: u32) -> Self {
-        match digit {
-            0 => SpriteType::Digit0,
-            1 => SpriteType::Digit1,
-            2 => SpriteType::Digit2,
-            3 => SpriteType::Digit3,
-            4 => SpriteType::Digit4,
-            5 => SpriteType::Digit5,
-            6 => SpriteType::Digit6,
-            7 => SpriteType::Digit7,
-            8 => SpriteType::Digit8,
-            9 => SpriteType::Digit9,
-            _ => { panic!("digit out of bounds"); }
-        }
-    }
-
-    fn block_digit(digit: u32) -> Self {
-        match digit {
-            0 => SpriteType::BlockEmptyDown,
-            1 => SpriteType::Block1,
-            2 => SpriteType::Block3,
-            3 => SpriteType::Block4,
-            4 => SpriteType::Block4,
-            5 => SpriteType::Block5,
-            6 => SpriteType::Block6,
-            7 => SpriteType::Block7,
-            8 => SpriteType::Block8,
-            _ => { panic!("digit out of bounds"); }
-        }
     }
 }
 

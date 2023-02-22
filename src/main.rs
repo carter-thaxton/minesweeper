@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 mod app;
-mod grid;
+mod game;
 mod sprites;
 
 fn main() -> eframe::Result<()> {
