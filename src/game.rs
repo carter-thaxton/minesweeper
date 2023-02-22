@@ -176,6 +176,11 @@ impl MinesweeperGame {
 
         if self.revealed_count == self.total_size() - self.difficulty.mines() {
             self.state = GameState::Completed;
+            for j in 0..self.grid.len() {
+                if self.grid[j] == GridState::Mine {
+                    self.flagged[j] = true;
+                }
+            }
         }
 
         true

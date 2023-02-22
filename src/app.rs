@@ -1,3 +1,4 @@
+use std::time::Instant;
 use egui::{vec2, Ui, Align, Direction, Key};
 use crate::game::{Difficulty, GridState, GameState, MinesweeperGame};
 use crate::sprites::{Sprites, SpriteType};
@@ -5,6 +6,8 @@ use crate::sprites::{Sprites, SpriteType};
 pub struct MinesweeperApp {
     sprites: Sprites,
     game: MinesweeperGame,
+    start_time: Option<Instant>,
+    end_time: Option<Instant>,
 }
 
 impl Default for MinesweeperApp {
@@ -12,6 +15,8 @@ impl Default for MinesweeperApp {
         Self {
             sprites: Sprites::default(),
             game: MinesweeperGame::default(),
+            start_time: None,
+            end_time: None,
         }
     }
 }
@@ -43,11 +48,20 @@ impl eframe::App for MinesweeperApp {
                     let reset = self.sprites.button(ui, face, 1.5).clicked();
                     if reset {
                         self.game = MinesweeperGame::new(self.game.difficulty());
+                        self.start_time = None;
+                        self.end_time = None;
                     }
                 });
 
                 columns[2].with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    self.sprites.digits(ui, 123, Direction::RightToLeft, 1.5);
+                    let timer = if let Some(start_time) = self.start_time {
+                        if let Some(end_time) = self.end_time {
+                            end_time.duration_since(start_time).as_secs().try_into().unwrap()
+                        } else {
+                            start_time.elapsed().as_secs().try_into().unwrap()
+                        }
+                    } else { 0 };
+                    self.sprites.digits(ui, timer, Direction::RightToLeft, 1.5);
                 });
             });
         });
@@ -58,10 +72,17 @@ impl eframe::App for MinesweeperApp {
             let clicked_pos = minesweeper_grid(ui, &self.sprites, &self.game, show_all);
 
             if let Some((x, y, right)) = clicked_pos {
+                let prev_state = self.game.state();
                 if right {
                     self.game.toggle_flag(x, y);
                 } else {
                     self.game.reveal(x, y);
+                }
+                if prev_state == GameState::Reset && self.game.state() == GameState::Playing {
+                    self.start_time = Some(Instant::now());
+                }
+                if prev_state == GameState::Playing && self.game.state().game_over() {
+                    self.end_time = Some(Instant::now());
                 }
             }
         });
@@ -78,12 +99,19 @@ impl eframe::App for MinesweeperApp {
 
             if difficulty != self.game.difficulty() {
                 self.game = MinesweeperGame::new(difficulty);
+                self.start_time = None;
+                self.end_time = None;
             }
         });
 
         // resize window to match contents
         let window_size = vec2(32. * self.game.width() as f32 + 10., 32. * self.game.height() as f32  + 10. + top_height + bottom_height);
         frame.set_window_size(window_size);
+
+        // ensure the timer increments while playing, even if no user interaction
+        if self.game.state() == GameState::Playing {
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
     }
 }
 
