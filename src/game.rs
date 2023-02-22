@@ -43,11 +43,20 @@ pub enum GameState {
     Dead,
 }
 
+impl GameState {
+    pub fn game_over(self) -> bool {
+        match self {
+            GameState::Reset | GameState::Playing => false,
+            GameState::Completed | GameState::Dead => true,
+        }
+    }
+}
+
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum GridState {
     Empty,
     Mine,
-    Count(u32),
+    Count(u8),
 }
 
 pub struct MinesweeperGame {
@@ -55,7 +64,9 @@ pub struct MinesweeperGame {
     state: GameState,
     mines_remaining: i32,
     grid: Vec<GridState>,
+    flagged: Vec<bool>,
     revealed: Vec<bool>,
+    revealed_count: usize,
 }
 
 impl Default for MinesweeperGame {
@@ -72,6 +83,7 @@ impl MinesweeperGame {
 
     pub fn with_mines(difficulty: Difficulty, mine_positions: &[usize]) -> Self {
         let grid = initialize_grid(difficulty, mine_positions);
+        let flagged = vec![false; grid.len()];
         let revealed = vec![false; grid.len()];
 
         MinesweeperGame {
@@ -79,7 +91,9 @@ impl MinesweeperGame {
             state: GameState::Reset,
             mines_remaining: mine_positions.len() as i32,
             grid,
+            flagged,
             revealed,
+            revealed_count: 0,
         }
     }
 
@@ -121,24 +135,67 @@ impl MinesweeperGame {
         self.revealed[i]
     }
 
-    pub fn state_and_revealed_at(&self, x: u32, y: u32) -> (GridState, bool) {
+    pub fn flagged_at(&self, x: u32, y: u32) -> bool {
         let i = pos_to_index(x, y, self.width());
-        (self.grid[i], self.revealed[i])
+        self.flagged[i]
+    }
+
+    pub fn state_and_revealed_and_flagged_at(&self, x: u32, y: u32) -> (GridState, bool, bool) {
+        let i = pos_to_index(x, y, self.width());
+        (self.grid[i], self.revealed[i], self.flagged[i])
     }
 
     pub fn reveal(&mut self, x: u32, y: u32) -> bool {
-        let _i = pos_to_index(x, y, self.width());
-        false
+        if self.state.game_over() { return false; }
+        self.state = GameState::Playing;
+
+        let i = pos_to_index(x, y, self.width());
+        if self.flagged[i] || self.revealed[i] { return false; }
+
+        self.revealed[i] = true;
+        self.revealed_count += 1;
+
+        match self.grid[i] {
+            GridState::Empty => {
+                // TODO: reveal neighbors
+                for y2 in y..=y+2 {
+                    if y2 > 0 && y2 <= self.height() {
+                        for x2 in x..=x+2 {
+                            if x2 > 0 && x2 <= self.width() {
+                                self.reveal(x2-1, y2-1);
+                            }
+                        }
+                    }
+                }
+            }
+            GridState::Mine => {
+                self.state = GameState::Dead;
+            },
+            GridState::Count(_) => {},
+        }
+
+        if self.revealed_count == self.total_size() - self.difficulty.mines() {
+            self.state = GameState::Completed;
+        }
+
+        true
     }
 
-    pub fn flag(&mut self, x: u32, y: u32) -> bool {
-        let _i = pos_to_index(x, y, self.width());
-        false
-    }
+    pub fn toggle_flag(&mut self, x: u32, y: u32) -> bool {
+        if self.state.game_over() { return false; }
+        self.state = GameState::Playing;
 
-    pub fn unflag(&mut self, x: u32, y: u32) -> bool {
-        let _i = pos_to_index(x, y, self.width());
-        false
+        let i = pos_to_index(x, y, self.width());
+        if !self.revealed[i] {
+            if self.flagged[i] {
+                self.flagged[i] = false;
+                self.mines_remaining += 1;
+            } else {
+                self.flagged[i] = true;
+                self.mines_remaining -= 1;
+            }
+        }
+        self.flagged[i]
     }
 }
 

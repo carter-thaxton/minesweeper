@@ -1,5 +1,5 @@
 use egui::{vec2, Ui, Align, Direction, Key};
-use crate::game::{Difficulty, GridState, MinesweeperGame};
+use crate::game::{Difficulty, GridState, GameState, MinesweeperGame};
 use crate::sprites::{Sprites, SpriteType};
 
 pub struct MinesweeperApp {
@@ -34,11 +34,13 @@ impl eframe::App for MinesweeperApp {
 
             ui.columns(3, |columns| {
                 columns[0].with_layout(egui::Layout::left_to_right(Align::Center), |ui| {
-                    self.sprites.digits(ui, 123, Direction::LeftToRight, 1.5);
+                    let mines_remaining = self.game.mines_remaining().max(0).try_into().unwrap();
+                    self.sprites.digits(ui, mines_remaining, Direction::LeftToRight, 1.5);
                 });
 
                 columns[1].with_layout(egui::Layout::centered_and_justified(Direction::LeftToRight), |ui| {
-                    let reset = self.sprites.button(ui, SpriteType::FaceSmileyUp, 1.5).clicked();
+                    let face = sprite_for_game_state(self.game.state());
+                    let reset = self.sprites.button(ui, face, 1.5).clicked();
                     if reset {
                         self.game = MinesweeperGame::new(self.game.difficulty());
                     }
@@ -52,11 +54,15 @@ impl eframe::App for MinesweeperApp {
 
         // central panel, with minesweeper grid
         egui::CentralPanel::default().show(ctx, |ui| {
-            let reveal_all = ctx.input(|i| i.key_down(Key::Space));
-            let clicked_pos = minesweeper_grid(ui, &self.sprites, &self.game, reveal_all);
+            let show_all = ctx.input(|i| i.key_down(Key::Space));
+            let clicked_pos = minesweeper_grid(ui, &self.sprites, &self.game, show_all);
 
-            if let Some((x, y)) = clicked_pos {
-                println!("Clicked {x},{y}");
+            if let Some((x, y, right)) = clicked_pos {
+                if right {
+                    self.game.toggle_flag(x, y);
+                } else {
+                    self.game.reveal(x, y);
+                }
             }
         });
 
@@ -86,7 +92,7 @@ impl eframe::App for MinesweeperApp {
 /// Uses sprites to draw each block.
 ///
 /// Return the grid position of a user click, or None.
-fn minesweeper_grid(ui: &mut Ui, sprites: &Sprites, game: &MinesweeperGame, reveal_all: bool) -> Option<(u32, u32)> {
+fn minesweeper_grid(ui: &mut Ui, sprites: &Sprites, game: &MinesweeperGame, show_all: bool) -> Option<(u32, u32, bool)> {
     let mut result = None;
 
     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
@@ -96,13 +102,14 @@ fn minesweeper_grid(ui: &mut Ui, sprites: &Sprites, game: &MinesweeperGame, reve
         for y in 0..game.height() {
             ui.horizontal(|ui| {
                 for x in 0..game.width() {
-                    let (state, revealed) = game.state_and_revealed_at(x, y);
-                    let sprite = sprite_for_state(state, revealed || reveal_all);
+                    let (state, revealed, flagged) = game.state_and_revealed_and_flagged_at(x, y);
+                    let sprite = sprite_for_grid(state, revealed, flagged, show_all, game.state().game_over());
                     let btn = sprites.button(ui, sprite, 2.0);
                     let clicked = btn.clicked();
+                    let right_clicked = btn.secondary_clicked();
 
-                    if clicked {
-                        result = Some((x, y))
+                    if clicked || right_clicked {
+                        result = Some((x, y, right_clicked))
                     }
 
                     i += 1;
@@ -114,14 +121,38 @@ fn minesweeper_grid(ui: &mut Ui, sprites: &Sprites, game: &MinesweeperGame, reve
     result
 }
 
-fn sprite_for_state(state: GridState, revealed: bool) -> SpriteType {
-    if !revealed {
-        SpriteType::BlockEmptyUp
+fn sprite_for_game_state(state: GameState) -> SpriteType {
+    match state {
+        GameState::Reset | GameState::Playing => SpriteType::FaceSmileyUp,
+        GameState::Completed => SpriteType::FaceCool,
+        GameState::Dead => SpriteType::FaceXXX,
+    }
+}
+
+fn sprite_for_grid(state: GridState, revealed: bool, flagged: bool, show_all: bool, game_over: bool) -> SpriteType {
+    if !revealed && !show_all {
+        if flagged {
+            if game_over && state != GridState::Mine {
+                SpriteType::BlockMineX
+            } else {
+                SpriteType::BlockFlag
+            }
+        } else if game_over && state == GridState::Mine {
+            SpriteType::BlockMine
+        } else {
+            SpriteType::BlockEmptyUp
+        }
+    } else if flagged {
+        match state {
+            GridState::Empty => SpriteType::BlockMineX,
+            GridState::Count(_) => SpriteType::BlockMineX,
+            GridState::Mine => SpriteType::BlockMine,
+        }
     } else {
         match state {
             GridState::Empty => SpriteType::BlockEmptyDown,
-            GridState::Mine => SpriteType::BlockBomb,
-            GridState::Count(count) => SpriteType::block_digit(count),
+            GridState::Count(count) => SpriteType::block_digit(count.into()),
+            GridState::Mine => { if revealed { SpriteType::BlockMineRed } else { SpriteType::BlockMine }},
         }
     }
 }
