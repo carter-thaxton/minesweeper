@@ -1,4 +1,4 @@
-use egui::{vec2, Ui, Align, Direction};
+use egui::{vec2, Ui, Align, Direction, Key};
 use crate::game::{Difficulty, GridState, MinesweeperGame};
 use crate::sprites::{Sprites, SpriteType};
 
@@ -52,7 +52,8 @@ impl eframe::App for MinesweeperApp {
 
         // central panel, with minesweeper grid
         egui::CentralPanel::default().show(ctx, |ui| {
-            let clicked_pos = minesweeper_grid(ui, &self.sprites, &self.game);
+            let reveal_all = ctx.input(|i| i.key_down(Key::Space));
+            let clicked_pos = minesweeper_grid(ui, &self.sprites, &self.game, reveal_all);
 
             if let Some((x, y)) = clicked_pos {
                 println!("Clicked {x},{y}");
@@ -64,11 +65,9 @@ impl eframe::App for MinesweeperApp {
             let mut difficulty = self.game.difficulty();
 
             ui.with_layout(egui::Layout::left_to_right(Align::Center), |ui| {
-                ui.horizontal(|ui| {
-                    ui.radio_value(&mut difficulty, Difficulty::Beginner, "Beginner");
-                    ui.radio_value(&mut difficulty, Difficulty::Intermediate, "Intermediate");
-                    ui.radio_value(&mut difficulty, Difficulty::Expert, "Expert");
-                });
+                ui.radio_value(&mut difficulty, Difficulty::Beginner, "Beginner");
+                ui.radio_value(&mut difficulty, Difficulty::Intermediate, "Intermediate");
+                ui.radio_value(&mut difficulty, Difficulty::Expert, "Expert");
             });
 
             if difficulty != self.game.difficulty() {
@@ -87,7 +86,7 @@ impl eframe::App for MinesweeperApp {
 /// Uses sprites to draw each block.
 ///
 /// Return the grid position of a user click, or None.
-fn minesweeper_grid(ui: &mut Ui, sprites: &Sprites, game: &MinesweeperGame) -> Option<(u32, u32)> {
+fn minesweeper_grid(ui: &mut Ui, sprites: &Sprites, game: &MinesweeperGame, reveal_all: bool) -> Option<(u32, u32)> {
     let mut result = None;
 
     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
@@ -98,7 +97,7 @@ fn minesweeper_grid(ui: &mut Ui, sprites: &Sprites, game: &MinesweeperGame) -> O
             ui.horizontal(|ui| {
                 for x in 0..game.width() {
                     let (state, revealed) = game.state_and_revealed_at(x, y);
-                    let sprite = sprite_for_state(state, revealed || true);
+                    let sprite = sprite_for_state(state, revealed || reveal_all);
                     let btn = sprites.button(ui, sprite, 2.0);
                     let clicked = btn.clicked();
 
