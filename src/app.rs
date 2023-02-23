@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use egui::{vec2, Ui, Align, Direction, Key};
 use crate::game::{Difficulty, GridState, GameState, MinesweeperGame};
 use crate::sprites::{Sprites, SpriteType};
@@ -25,6 +25,17 @@ impl MinesweeperApp {
     /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Default::default()
+    }
+
+    /// Current timer value to display
+    fn current_timer(&self) -> u32 {
+        let duration = match (self.start_time, self.end_time) {
+            (Some(start_time), None) => { start_time.elapsed() },
+            (Some(start_time), Some(end_time)) => { end_time.duration_since(start_time) },
+            (None, _) => { Duration::ZERO },
+        };
+
+        duration.as_secs().try_into().unwrap()
     }
 }
 
@@ -54,14 +65,7 @@ impl eframe::App for MinesweeperApp {
                 });
 
                 columns[2].with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    let timer = if let Some(start_time) = self.start_time {
-                        if let Some(end_time) = self.end_time {
-                            end_time.duration_since(start_time).as_secs().try_into().unwrap()
-                        } else {
-                            start_time.elapsed().as_secs().try_into().unwrap()
-                        }
-                    } else { 0 };
-                    self.sprites.digits(ui, timer, Direction::RightToLeft, 1.5);
+                    self.sprites.digits(ui, self.current_timer(), Direction::RightToLeft, 1.5);
                 });
             });
         });

@@ -160,7 +160,9 @@ impl MinesweeperGame {
 
         match self.grid[i] {
             GridState::Empty => {
-                // TODO: reveal neighbors
+                // Also reveal neighbors
+                // Naively, we'd like to look at [x-1, x, x+1], but because x/y are u32, we can't actually calculate x-1 when x is 0.
+                // So use a little trick to check bounds+1 on [x, x+1, x+2], and then subtract 1 when in bounds.
                 for y2 in y..=y+2 {
                     if y2 > 0 && y2 <= self.height() {
                         for x2 in x..=x+2 {
@@ -177,11 +179,15 @@ impl MinesweeperGame {
             GridState::Count(_) => {},
         }
 
-        if self.revealed_count == self.total_size() - self.difficulty.mines() {
-            self.state = GameState::Completed;
-            for j in 0..self.grid.len() {
-                if self.grid[j] == GridState::Mine {
-                    self.flagged[j] = true;
+        if !self.state.game_over() {
+            // Check if revealing this completes the game
+            if self.revealed_count == self.total_size() - self.difficulty.mines() {
+                self.state = GameState::Completed;
+                // Flag all mines when game ends successfully
+                for j in 0..self.grid.len() {
+                    if self.grid[j] == GridState::Mine {
+                        self.flagged[j] = true;
+                    }
                 }
             }
         }
