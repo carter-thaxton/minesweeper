@@ -134,8 +134,8 @@ fn minesweeper_grid(ui: &mut Ui, sprites: &Sprites, game: &MinesweeperGame, show
         for y in 0..game.height() {
             ui.horizontal(|ui| {
                 for x in 0..game.width() {
-                    let (state, revealed, flagged) = game.state_and_revealed_and_flagged_at(x, y);
-                    let sprite = sprite_for_grid(state, revealed, flagged, show_all, game.state().game_over());
+                    let state = game.peek_at(x, y, show_all);
+                    let sprite = sprite_for_grid(state);
                     let btn = sprites.button(ui, sprite, 2.0);
                     let clicked = btn.clicked();
                     let right_clicked = btn.secondary_clicked();
@@ -161,30 +161,14 @@ fn sprite_for_game_state(state: GameState) -> SpriteType {
     }
 }
 
-fn sprite_for_grid(state: GridState, revealed: bool, flagged: bool, show_all: bool, game_over: bool) -> SpriteType {
-    if !revealed && !show_all {
-        if flagged {
-            if game_over && state != GridState::Mine {
-                SpriteType::BlockMineX
-            } else {
-                SpriteType::BlockFlag
-            }
-        } else if game_over && state == GridState::Mine {
-            SpriteType::BlockMine
-        } else {
-            SpriteType::BlockEmptyUp
-        }
-    } else if flagged {
-        match state {
-            GridState::Empty => SpriteType::BlockMineX,
-            GridState::Count(_) => SpriteType::BlockMineX,
-            GridState::Mine => SpriteType::BlockMine,
-        }
-    } else {
-        match state {
-            GridState::Empty => SpriteType::BlockEmptyDown,
-            GridState::Count(count) => SpriteType::block_digit(count.into()),
-            GridState::Mine => { if revealed { SpriteType::BlockMineRed } else { SpriteType::BlockMine }},
-        }
+fn sprite_for_grid(state: GridState) -> SpriteType {
+    match state {
+        GridState::Empty => SpriteType::BlockEmptyDown,
+        GridState::Count(count) => SpriteType::block_digit(count.into()),
+        GridState::Mine => SpriteType::BlockMine,
+        GridState::Unrevealed => SpriteType::BlockEmptyUp,
+        GridState::Flagged => SpriteType::BlockFlag,
+        GridState::MineHighlighted => SpriteType::BlockMineRed,
+        GridState::MineIncorrect => SpriteType::BlockMineX,
     }
 }

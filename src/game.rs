@@ -54,9 +54,16 @@ impl GameState {
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum GridState {
+    // Actual states of grid internally
     Empty,
-    Mine,
     Count(u8),
+    Mine,
+
+    // Additional states that may be shown to player
+    Unrevealed,
+    Flagged,
+    MineHighlighted,
+    MineIncorrect,
 }
 
 pub struct MinesweeperGame {
@@ -148,6 +155,39 @@ impl MinesweeperGame {
         (self.grid[i], self.revealed[i], self.flagged[i])
     }
 
+    pub fn peek_at(&self, x: u32, y: u32, show_actual: bool) -> GridState {
+        let (state, revealed, flagged) = self.state_and_revealed_and_flagged_at(x, y);
+        let game_over = self.state.game_over();
+
+        if !revealed && !show_actual {
+            if flagged {
+                if game_over && state != GridState::Mine {
+                    GridState::MineIncorrect
+                } else {
+                    GridState::Flagged
+                }
+            } else if game_over && state == GridState::Mine {
+                GridState::Mine
+            } else {
+                GridState::Unrevealed
+            }
+        } else if flagged {
+            match state {
+                GridState::Empty => GridState::MineIncorrect,
+                GridState::Count(_) => GridState::MineIncorrect,
+                GridState::Mine => GridState::Mine,
+                _ => { panic!("Invalid state in grid"); },
+            }
+        } else {
+            match state {
+                GridState::Empty => GridState::Empty,
+                GridState::Count(count) => GridState::Count(count),
+                GridState::Mine => { if revealed { GridState::MineHighlighted } else { GridState::Mine } },
+                _ => { panic!("Invalid state in grid"); },
+            }
+        }
+    }
+
     pub fn reveal(&mut self, x: u32, y: u32) -> bool {
         if self.state.game_over() { return false; }
         self.state = GameState::Playing;
@@ -173,10 +213,11 @@ impl MinesweeperGame {
                     }
                 }
             }
+            GridState::Count(_) => {},
             GridState::Mine => {
                 self.state = GameState::Dead;
             },
-            GridState::Count(_) => {},
+            _ => { panic!("Invalid state in grid"); },
         }
 
         if !self.state.game_over() {
