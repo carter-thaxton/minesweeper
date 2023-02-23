@@ -1,5 +1,5 @@
+use egui::{pos2, vec2, Direction, Image, ImageButton, Rect, Response, Ui, Vec2};
 use egui_extras::RetainedImage;
-use egui::{pos2, vec2, Rect, Vec2, ImageButton, Image, Ui, Direction, Response};
 
 pub enum SpriteType {
     Digit0,
@@ -51,7 +51,9 @@ impl SpriteType {
             7 => SpriteType::Digit7,
             8 => SpriteType::Digit8,
             9 => SpriteType::Digit9,
-            _ => { panic!("digit out of bounds"); }
+            _ => {
+                panic!("digit out of bounds");
+            }
         }
     }
 
@@ -66,7 +68,9 @@ impl SpriteType {
             6 => SpriteType::Block6,
             7 => SpriteType::Block7,
             8 => SpriteType::Block8,
-            _ => { panic!("digit out of bounds"); }
+            _ => {
+                panic!("digit out of bounds");
+            }
         }
     }
 }
@@ -75,51 +79,59 @@ impl SpriteType {
     const SPRITESHEET_WIDTH: f32 = 139.;
     const SPRITESHEET_HEIGHT: f32 = 84.;
 
+    #[rustfmt::skip]
     fn pixels(&self) -> (u32, u32, u32, u32) {
         match self {
-            SpriteType::Digit1 => (0,   0,  13, 23),
-            SpriteType::Digit2 => (14,  0,  13, 23),
-            SpriteType::Digit3 => (28,  0,  13, 23),
-            SpriteType::Digit4 => (42,  0,  13, 23),
-            SpriteType::Digit5 => (56,  0,  13, 23),
-            SpriteType::Digit6 => (70,  0,  13, 23),
-            SpriteType::Digit7 => (84,  0,  13, 23),
-            SpriteType::Digit8 => (98,  0,  13, 23),
-            SpriteType::Digit9 => (112, 0,  13, 23),
-            SpriteType::Digit0 => (126, 0,  13, 23),
+            SpriteType::Digit1 => (0,   0, 13, 23),
+            SpriteType::Digit2 => (14,  0, 13, 23),
+            SpriteType::Digit3 => (28,  0, 13, 23),
+            SpriteType::Digit4 => (42,  0, 13, 23),
+            SpriteType::Digit5 => (56,  0, 13, 23),
+            SpriteType::Digit6 => (70,  0, 13, 23),
+            SpriteType::Digit7 => (84,  0, 13, 23),
+            SpriteType::Digit8 => (98,  0, 13, 23),
+            SpriteType::Digit9 => (112, 0, 13, 23),
+            SpriteType::Digit0 => (126, 0, 13, 23),
 
-            SpriteType::FaceSmileyUp        => (0,   24,  26, 26),
-            SpriteType::FaceSmileyDown      => (27,  24,  26, 26),
-            SpriteType::FaceRuhRoh          => (54,  24,  26, 26),
-            SpriteType::FaceCool            => (81,  24,  26, 26),
-            SpriteType::FaceXXX             => (108, 24,  26, 26),
+            SpriteType::FaceSmileyUp        => (0,   24, 26, 26),
+            SpriteType::FaceSmileyDown      => (27,  24, 26, 26),
+            SpriteType::FaceRuhRoh          => (54,  24, 26, 26),
+            SpriteType::FaceCool            => (81,  24, 26, 26),
+            SpriteType::FaceXXX             => (108, 24, 26, 26),
 
-            SpriteType::BlockEmptyUp        => (0,   51,  16, 16),
-            SpriteType::BlockEmptyDown      => (17,  51,  16, 16),
-            SpriteType::BlockFlag           => (34,  51,  16, 16),
-            SpriteType::BlockQuestionUp     => (51,  51,  16, 16),
-            SpriteType::BlockQuestionDown   => (68,  51,  16, 16),
-            SpriteType::BlockMine           => (85,  51,  16, 16),
-            SpriteType::BlockMineRed        => (102, 51,  16, 16),
-            SpriteType::BlockMineX          => (119, 51,  16, 16),
+            SpriteType::BlockEmptyUp        => (0,   51, 16, 16),
+            SpriteType::BlockEmptyDown      => (17,  51, 16, 16),
+            SpriteType::BlockFlag           => (34,  51, 16, 16),
+            SpriteType::BlockQuestionUp     => (51,  51, 16, 16),
+            SpriteType::BlockQuestionDown   => (68,  51, 16, 16),
+            SpriteType::BlockMine           => (85,  51, 16, 16),
+            SpriteType::BlockMineRed        => (102, 51, 16, 16),
+            SpriteType::BlockMineX          => (119, 51, 16, 16),
 
-            SpriteType::Block1 => (0,   68,  16, 16),
-            SpriteType::Block2 => (17,  68,  16, 16),
-            SpriteType::Block3 => (34,  68,  16, 16),
-            SpriteType::Block4 => (51,  68,  16, 16),
-            SpriteType::Block5 => (68,  68,  16, 16),
-            SpriteType::Block6 => (85,  68,  16, 16),
-            SpriteType::Block7 => (102, 68,  16, 16),
-            SpriteType::Block8 => (119, 68,  16, 16),
+            SpriteType::Block1 => (0,   68, 16, 16),
+            SpriteType::Block2 => (17,  68, 16, 16),
+            SpriteType::Block3 => (34,  68, 16, 16),
+            SpriteType::Block4 => (51,  68, 16, 16),
+            SpriteType::Block5 => (68,  68, 16, 16),
+            SpriteType::Block6 => (85,  68, 16, 16),
+            SpriteType::Block7 => (102, 68, 16, 16),
+            SpriteType::Block8 => (119, 68, 16, 16),
         }
     }
 
     fn rect(&self) -> Rect {
         let (x, y, w, h) = self.pixels();
         [
-            pos2(x as f32 / Self::SPRITESHEET_WIDTH, y as f32 / Self::SPRITESHEET_HEIGHT),
-            pos2((x + w) as f32 / Self::SPRITESHEET_WIDTH, (y + h) as f32 / Self::SPRITESHEET_HEIGHT)
-        ].into()
+            pos2(
+                x as f32 / Self::SPRITESHEET_WIDTH,
+                y as f32 / Self::SPRITESHEET_HEIGHT,
+            ),
+            pos2(
+                (x + w) as f32 / Self::SPRITESHEET_WIDTH,
+                (y + h) as f32 / Self::SPRITESHEET_HEIGHT,
+            ),
+        ]
+        .into()
     }
 
     fn size(&self) -> Vec2 {
@@ -127,7 +139,6 @@ impl SpriteType {
         vec2(w as f32, h as f32)
     }
 }
-
 
 pub struct Sprites {
     spritesheet: RetainedImage,
@@ -175,7 +186,9 @@ impl Sprites {
     }
 
     pub fn digits(&self, ui: &mut Ui, value: u32, dir: Direction, zoom: f32) {
-        if value > 999 { panic!("value out of bounds - must be 0-999"); }
+        if value > 999 {
+            panic!("value out of bounds - must be 0-999");
+        }
 
         let d1 = value % 10;
         let value = value / 10;
@@ -194,6 +207,5 @@ impl Sprites {
                 self.digit(ui, d3, zoom);
             }
         }
-
     }
 }

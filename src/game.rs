@@ -1,12 +1,16 @@
-
 use rand::prelude::SliceRandom;
+use std::time::{Duration, Instant};
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Difficulty {
     Beginner,
     Intermediate,
     Expert,
-    Custom { width: u32, height: u32, mines: usize },
+    Custom {
+        width: u32,
+        height: u32,
+        mines: usize,
+    },
 }
 
 impl Difficulty {
@@ -26,7 +30,6 @@ impl Difficulty {
             Difficulty::Expert => 99,
             Difficulty::Custom { mines, .. } => mines,
         }
-
     }
 
     fn total_size(self) -> usize {
@@ -35,7 +38,14 @@ impl Difficulty {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum GameMove {
+    NoOp,
+    Reveal(u32, u32),
+    Flag(u32, u32),
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum GameState {
     Reset,
     Playing,
@@ -74,6 +84,7 @@ pub struct MinesweeperGame {
     flagged: Vec<bool>,
     revealed: Vec<bool>,
     revealed_count: usize,
+    timer: Timer,
 }
 
 impl Default for MinesweeperGame {
@@ -89,8 +100,15 @@ impl MinesweeperGame {
     }
 
     pub fn with_mines(difficulty: Difficulty, mine_positions: &[usize]) -> Self {
-        assert!(difficulty.mines() <= difficulty.total_size(), "Too many mines for grid size");
-        assert_eq!(difficulty.mines(), mine_positions.len(), "Explicit mine_positions must match the number of mines for the difficulty");
+        assert!(
+            difficulty.mines() <= difficulty.total_size(),
+            "Too many mines for grid size"
+        );
+        assert_eq!(
+            difficulty.mines(),
+            mine_positions.len(),
+            "Explicit mine_positions must match the number of mines for the difficulty"
+        );
 
         let grid = initialize_grid(difficulty, mine_positions);
         let flagged = vec![false; grid.len()];
@@ -104,6 +122,7 @@ impl MinesweeperGame {
             flagged,
             revealed,
             revealed_count: 0,
+            timer: Timer::default(),
         }
     }
 
@@ -135,6 +154,10 @@ impl MinesweeperGame {
         self.mines_remaining
     }
 
+    pub fn timer_elapsed(&self) -> Duration {
+        self.timer.elapsed_duration()
+    }
+
     pub fn peek_at(&self, x: u32, y: u32, show_actual: bool) -> GridState {
         let i = pos_to_index(x, y, self.width());
         let (state, revealed, flagged) = (self.grid[i], self.revealed[i], self.flagged[i]);
@@ -157,24 +180,49 @@ impl MinesweeperGame {
                 GridState::Empty => GridState::MineIncorrect,
                 GridState::Count(_) => GridState::MineIncorrect,
                 GridState::Mine => GridState::Mine,
-                _ => { panic!("Invalid state in grid"); },
+                _ => {
+                    panic!("Invalid state in grid");
+                }
             }
         } else {
             match state {
                 GridState::Empty => GridState::Empty,
                 GridState::Count(count) => GridState::Count(count),
-                GridState::Mine => { if revealed { GridState::MineHighlighted } else { GridState::Mine } },
-                _ => { panic!("Invalid state in grid"); },
+                GridState::Mine => {
+                    if revealed {
+                        GridState::MineHighlighted
+                    } else {
+                        GridState::Mine
+                    }
+                }
+                _ => {
+                    panic!("Invalid state in grid");
+                }
             }
         }
     }
 
+    pub fn make_move(&mut self, m: GameMove) -> bool {
+        match m {
+            GameMove::NoOp => false,
+            GameMove::Reveal(x, y) => self.reveal(x, y),
+            GameMove::Flag(x, y) => self.toggle_flag(x, y),
+        }
+    }
+
     pub fn reveal(&mut self, x: u32, y: u32) -> bool {
-        if self.state.game_over() { return false; }
+        if self.state.game_over() {
+            return false;
+        }
+        if !self.timer.is_started() {
+            self.timer.start();
+        }
         self.state = GameState::Playing;
 
         let i = pos_to_index(x, y, self.width());
-        if self.flagged[i] || self.revealed[i] { return false; }
+        if self.flagged[i] || self.revealed[i] {
+            return false;
+        }
 
         self.revealed[i] = true;
         self.revealed_count += 1;
@@ -184,27 +232,30 @@ impl MinesweeperGame {
                 // Also reveal neighbors
                 // Naively, we'd like to look at [x-1, x, x+1], but because x/y are u32, we can't actually calculate x-1 when x is 0.
                 // So use a little trick to check bounds+1 on [x, x+1, x+2], and then subtract 1 when in bounds.
-                for y2 in y..=y+2 {
+                for y2 in y..=y + 2 {
                     if y2 > 0 && y2 <= self.height() {
-                        for x2 in x..=x+2 {
+                        for x2 in x..=x + 2 {
                             if x2 > 0 && x2 <= self.width() {
-                                self.reveal(x2-1, y2-1);
+                                self.reveal(x2 - 1, y2 - 1);
                             }
                         }
                     }
                 }
             }
-            GridState::Count(_) => {},
+            GridState::Count(_) => {}
             GridState::Mine => {
                 self.state = GameState::Dead;
-            },
-            _ => { panic!("Invalid state in grid"); },
+            }
+            _ => {
+                panic!("Invalid state in grid");
+            }
         }
 
         if !self.state.game_over() {
             // Check if revealing this completes the game
             if self.revealed_count == self.total_size() - self.difficulty.mines() {
                 self.state = GameState::Completed;
+                self.timer.end();
                 // Flag all mines when game ends successfully
                 for j in 0..self.grid.len() {
                     if self.grid[j] == GridState::Mine {
@@ -218,7 +269,12 @@ impl MinesweeperGame {
     }
 
     pub fn toggle_flag(&mut self, x: u32, y: u32) -> bool {
-        if self.state.game_over() { return false; }
+        if self.state.game_over() {
+            return false;
+        }
+        if !self.timer.is_started() {
+            self.timer.start();
+        }
         self.state = GameState::Playing;
 
         let i = pos_to_index(x, y, self.width());
@@ -235,7 +291,6 @@ impl MinesweeperGame {
     }
 }
 
-
 fn pos_to_index(x: u32, y: u32, width: u32) -> usize {
     (x + y * width) as usize
 }
@@ -248,7 +303,9 @@ fn generate_mines(mines: usize, size: usize) -> Vec<usize> {
     let mut result: Vec<usize> = (0..size).collect();
 
     // shortcut to handle 100% density
-    if mines >= size { return result }
+    if mines >= size {
+        return result;
+    }
 
     let mut rng = rand::thread_rng();
     result.shuffle(&mut rng);
@@ -272,30 +329,46 @@ fn initialize_grid(difficulty: Difficulty, mine_positions: &[usize]) -> Vec<Grid
                 let mut count = 0;
 
                 if x > 0 {
-                    if grid[i-1] == GridState::Mine { count += 1 };         // left
+                    if grid[i - 1] == GridState::Mine {
+                        count += 1
+                    }; // left
                 }
-                if x < w-1 {
-                    if grid[i+1] == GridState::Mine { count += 1 };         // right
+                if x < w - 1 {
+                    if grid[i + 1] == GridState::Mine {
+                        count += 1
+                    }; // right
                 }
 
                 if y > 0 {
-                    let j = pos_to_index(x, y-1, w);
-                    if grid[j] == GridState::Mine { count += 1 };           // up
+                    let j = pos_to_index(x, y - 1, w);
+                    if grid[j] == GridState::Mine {
+                        count += 1
+                    }; // up
                     if x > 0 {
-                        if grid[j-1] == GridState::Mine { count += 1 };     // up-left
+                        if grid[j - 1] == GridState::Mine {
+                            count += 1
+                        }; // up-left
                     }
-                    if x < w-1 {
-                        if grid[j+1] == GridState::Mine { count += 1 };     // up-right
+                    if x < w - 1 {
+                        if grid[j + 1] == GridState::Mine {
+                            count += 1
+                        }; // up-right
                     }
                 }
-                if y < h-1 {
-                    let j = pos_to_index(x, y+1, w);
-                    if grid[j] == GridState::Mine { count += 1 };           // down
+                if y < h - 1 {
+                    let j = pos_to_index(x, y + 1, w);
+                    if grid[j] == GridState::Mine {
+                        count += 1
+                    }; // down
                     if x > 0 {
-                        if grid[j-1] == GridState::Mine { count += 1 };     // down-left
+                        if grid[j - 1] == GridState::Mine {
+                            count += 1
+                        }; // down-left
                     }
-                    if x < w-1 {
-                        if grid[j+1] == GridState::Mine { count += 1 };     // down-right
+                    if x < w - 1 {
+                        if grid[j + 1] == GridState::Mine {
+                            count += 1
+                        }; // down-right
                     }
                 }
 
@@ -309,4 +382,51 @@ fn initialize_grid(difficulty: Difficulty, mine_positions: &[usize]) -> Vec<Grid
     }
 
     grid
+}
+
+struct Timer {
+    start_time: Option<Instant>,
+    end_time: Option<Instant>,
+}
+
+impl Default for Timer {
+    fn default() -> Self {
+        Timer {
+            start_time: None,
+            end_time: None,
+        }
+    }
+}
+
+impl Timer {
+    fn reset(&mut self) {
+        self.start_time = None;
+        self.end_time = None;
+    }
+
+    fn start(&mut self) {
+        self.start_time = Some(Instant::now());
+        self.end_time = None;
+    }
+
+    fn end(&mut self) {
+        assert!(self.start_time.is_some(), "Timer end called before start");
+        self.end_time = Some(Instant::now());
+    }
+
+    fn is_started(&self) -> bool {
+        self.start_time.is_some()
+    }
+
+    fn is_ended(&self) -> bool {
+        self.end_time.is_some()
+    }
+
+    fn elapsed_duration(&self) -> Duration {
+        match (self.start_time, self.end_time) {
+            (Some(start_time), None) => start_time.elapsed(),
+            (Some(start_time), Some(end_time)) => end_time.duration_since(start_time),
+            (None, _) => Duration::ZERO,
+        }
+    }
 }
