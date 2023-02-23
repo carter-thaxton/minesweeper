@@ -6,8 +6,7 @@ use crate::sprites::{Sprites, SpriteType};
 pub struct MinesweeperApp {
     sprites: Sprites,
     game: MinesweeperGame,
-    start_time: Option<Instant>,
-    end_time: Option<Instant>,
+    timer: Timer,
 }
 
 impl Default for MinesweeperApp {
@@ -15,8 +14,7 @@ impl Default for MinesweeperApp {
         Self {
             sprites: Sprites::default(),
             game: MinesweeperGame::default(),
-            start_time: None,
-            end_time: None,
+            timer: Timer::default(),
         }
     }
 }
@@ -25,17 +23,6 @@ impl MinesweeperApp {
     /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Default::default()
-    }
-
-    /// Current timer value to display
-    fn current_timer(&self) -> u32 {
-        let duration = match (self.start_time, self.end_time) {
-            (Some(start_time), None) => { start_time.elapsed() },
-            (Some(start_time), Some(end_time)) => { end_time.duration_since(start_time) },
-            (None, _) => { Duration::ZERO },
-        };
-
-        duration.as_secs().try_into().unwrap()
     }
 }
 
@@ -59,13 +46,13 @@ impl eframe::App for MinesweeperApp {
                     let reset = self.sprites.button(ui, face, 1.5).clicked();
                     if reset {
                         self.game = MinesweeperGame::new(self.game.difficulty());
-                        self.start_time = None;
-                        self.end_time = None;
+                        self.timer.reset();
                     }
                 });
 
                 columns[2].with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
-                    self.sprites.digits(ui, self.current_timer(), Direction::RightToLeft, 1.5);
+                    let timer_secs = self.timer.elapsed_duration().as_secs().try_into().unwrap();
+                    self.sprites.digits(ui, timer_secs, Direction::RightToLeft, 1.5);
                 });
             });
         });
@@ -83,10 +70,10 @@ impl eframe::App for MinesweeperApp {
                     self.game.reveal(x, y);
                 }
                 if prev_state == GameState::Reset && self.game.state() == GameState::Playing {
-                    self.start_time = Some(Instant::now());
+                    self.timer.start();
                 }
                 if prev_state == GameState::Playing && self.game.state().game_over() {
-                    self.end_time = Some(Instant::now());
+                    self.timer.end();
                 }
             }
         });
@@ -103,8 +90,7 @@ impl eframe::App for MinesweeperApp {
 
             if difficulty != self.game.difficulty() {
                 self.game = MinesweeperGame::new(difficulty);
-                self.start_time = None;
-                self.end_time = None;
+                self.timer.reset();
             }
         });
 
@@ -114,7 +100,7 @@ impl eframe::App for MinesweeperApp {
 
         // ensure the timer increments while playing, even if no user interaction
         if self.game.state() == GameState::Playing {
-            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+            ctx.request_repaint_after(Duration::from_millis(100));
         }
     }
 }
@@ -172,3 +158,41 @@ fn sprite_for_grid(state: GridState) -> SpriteType {
         GridState::MineIncorrect => SpriteType::BlockMineX,
     }
 }
+
+struct Timer {
+    start_time: Option<Instant>,
+    end_time: Option<Instant>,
+}
+
+impl Default for Timer {
+    fn default() -> Self {
+        Timer {
+            start_time: None,
+            end_time: None,
+        }
+    }
+}
+
+impl Timer {
+    fn reset(&mut self) {
+        self.start_time = None;
+        self.end_time = None;
+    }
+
+    fn start(&mut self) {
+        self.start_time = Some(Instant::now());
+    }
+
+    fn end(&mut self) {
+        self.end_time = Some(Instant::now());
+    }
+
+    fn elapsed_duration(&self) -> Duration {
+        match (self.start_time, self.end_time) {
+            (Some(start_time), None) => { start_time.elapsed() },
+            (Some(start_time), Some(end_time)) => { end_time.duration_since(start_time) },
+            (None, _) => { Duration::ZERO },
+        }
+    }
+}
+
