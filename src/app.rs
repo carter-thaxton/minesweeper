@@ -181,9 +181,11 @@ impl Timer {
 
     fn start(&mut self) {
         self.start_time = Some(Instant::now());
+        self.end_time = None;
     }
 
     fn end(&mut self) {
+        assert!(self.start_time.is_some(), "Timer end called before start");
         self.end_time = Some(Instant::now());
     }
 

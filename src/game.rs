@@ -89,8 +89,8 @@ impl MinesweeperGame {
     }
 
     pub fn with_mines(difficulty: Difficulty, mine_positions: &[usize]) -> Self {
-        assert!(difficulty.mines() <= difficulty.total_size());
-        assert_eq!(difficulty.mines(), mine_positions.len());
+        assert!(difficulty.mines() <= difficulty.total_size(), "Too many mines for grid size");
+        assert_eq!(difficulty.mines(), mine_positions.len(), "Explicit mine_positions must match the number of mines for the difficulty");
 
         let grid = initialize_grid(difficulty, mine_positions);
         let flagged = vec![false; grid.len()];
