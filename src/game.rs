@@ -135,28 +135,9 @@ impl MinesweeperGame {
         self.mines_remaining
     }
 
-    pub fn state_at(&self, x: u32, y: u32) -> GridState {
-        let i = pos_to_index(x, y, self.width());
-        self.grid[i]
-    }
-
-    pub fn revealed_at(&self, x: u32, y: u32) -> bool {
-        let i = pos_to_index(x, y, self.width());
-        self.revealed[i]
-    }
-
-    pub fn flagged_at(&self, x: u32, y: u32) -> bool {
-        let i = pos_to_index(x, y, self.width());
-        self.flagged[i]
-    }
-
-    pub fn state_and_revealed_and_flagged_at(&self, x: u32, y: u32) -> (GridState, bool, bool) {
-        let i = pos_to_index(x, y, self.width());
-        (self.grid[i], self.revealed[i], self.flagged[i])
-    }
-
     pub fn peek_at(&self, x: u32, y: u32, show_actual: bool) -> GridState {
-        let (state, revealed, flagged) = self.state_and_revealed_and_flagged_at(x, y);
+        let i = pos_to_index(x, y, self.width());
+        let (state, revealed, flagged) = (self.grid[i], self.revealed[i], self.flagged[i]);
         let game_over = self.state.game_over();
 
         if !revealed && !show_actual {
