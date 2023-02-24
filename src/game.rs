@@ -62,7 +62,7 @@ impl GameState {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum GridState {
     // Actual states of grid internally
     Empty,
@@ -134,6 +134,10 @@ impl MinesweeperGame {
         self.state
     }
 
+    pub fn game_over(&self) -> bool {
+        self.state.game_over()
+    }
+
     pub fn total_size(&self) -> usize {
         self.difficulty.total_size()
     }
@@ -158,10 +162,14 @@ impl MinesweeperGame {
         self.timer.elapsed_duration()
     }
 
+    pub fn revealed_count(&self) -> usize {
+        self.revealed_count
+    }
+
     pub fn peek_at(&self, x: u32, y: u32, show_actual: bool) -> GridState {
         let i = pos_to_index(x, y, self.width());
         let (state, revealed, flagged) = (self.grid[i], self.revealed[i], self.flagged[i]);
-        let game_over = self.state.game_over();
+        let game_over = self.game_over();
 
         if !revealed && !show_actual {
             if flagged {
@@ -211,7 +219,7 @@ impl MinesweeperGame {
     }
 
     pub fn reveal(&mut self, x: u32, y: u32) -> bool {
-        if self.state.game_over() {
+        if self.game_over() {
             return false;
         }
         if !self.timer.is_started() {
@@ -251,7 +259,7 @@ impl MinesweeperGame {
             }
         }
 
-        if !self.state.game_over() {
+        if !self.game_over() {
             // Check if revealing this completes the game
             if self.revealed_count == self.total_size() - self.difficulty.mines() {
                 self.state = GameState::Completed;
@@ -269,7 +277,7 @@ impl MinesweeperGame {
     }
 
     pub fn toggle_flag(&mut self, x: u32, y: u32) -> bool {
-        if self.state.game_over() {
+        if self.game_over() {
             return false;
         }
         if !self.timer.is_started() {

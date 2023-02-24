@@ -1,5 +1,6 @@
 use crate::game::{Difficulty, GameState, GridState, MinesweeperGame};
 use crate::sprites::{SpriteType, Sprites};
+use crate::solver::{get_next_move};
 use egui::{vec2, Align, Direction, Key, Ui};
 use std::time::Duration;
 
@@ -28,6 +29,13 @@ impl eframe::App for MinesweeperApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let top_height = 42.0;
         let bottom_height = 42.0;
+
+        // every frame, run solver for one move if S key is pressed
+        let run_solver = ctx.input(|i| i.key_pressed(Key::S));
+        if run_solver {
+            let m = get_next_move(&self.game);
+            self.game.make_move(m);
+        }
 
         // top panel, with numbers and faces
         egui::TopBottomPanel::top("top")

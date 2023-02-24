@@ -4,6 +4,7 @@
 
 mod app;
 mod game;
+mod solver;
 mod sprites;
 
 fn main() -> eframe::Result<()> {
