@@ -1,6 +1,6 @@
 use crate::game::{Difficulty, GameState, GridState, MinesweeperGame};
+use crate::solver::get_next_move;
 use crate::sprites::{SpriteType, Sprites};
-use crate::solver::{get_next_move};
 use egui::{vec2, Align, Direction, Key, Ui};
 use std::time::Duration;
 

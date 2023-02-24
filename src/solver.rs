@@ -1,4 +1,3 @@
-
 use crate::game::{GameMove, GridState, MinesweeperGame};
 
 pub fn get_next_move(game: &MinesweeperGame) -> GameMove {
@@ -12,7 +11,7 @@ pub fn get_next_move(game: &MinesweeperGame) -> GameMove {
 
     // special case for first move: just pick the middle
     if game.revealed_count() == 0 {
-        return GameMove::Reveal(w/2, h/2);
+        return GameMove::Reveal(w / 2, h / 2);
     }
 
     // first check for any logically consistent moves
@@ -34,14 +33,13 @@ pub fn get_next_move(game: &MinesweeperGame) -> GameMove {
     GameMove::NoOp
 }
 
-
 fn neighbors(x: u32, y: u32, w: u32, h: u32) -> Vec<(u32, u32)> {
     let mut result = Vec::new();
     for y2 in y..=y + 2 {
         if y2 > 0 && y2 <= h {
             for x2 in x..=x + 2 {
                 if x2 > 0 && x2 <= w {
-                    result.push((x2-1, y2-1));
+                    result.push((x2 - 1, y2 - 1));
                 }
             }
         }
@@ -49,8 +47,12 @@ fn neighbors(x: u32, y: u32, w: u32, h: u32) -> Vec<(u32, u32)> {
     result
 }
 
-
-fn logical_move_around_count(x: u32, y: u32, count: u8, game: &MinesweeperGame) -> Option<GameMove> {
+fn logical_move_around_count(
+    x: u32,
+    y: u32,
+    count: u8,
+    game: &MinesweeperGame,
+) -> Option<GameMove> {
     let w = game.width();
     let h = game.height();
 
@@ -62,13 +64,17 @@ fn logical_move_around_count(x: u32, y: u32, count: u8, game: &MinesweeperGame) 
     for (x2, y2) in neighbors(x, y, w, h) {
         let neighbor_state = game.peek_at(x2, y2, false);
         match neighbor_state {
-            GridState::Empty | GridState::Count(_) => {},
-            GridState::Flagged => { flag_count += 1; }
+            GridState::Empty | GridState::Count(_) => {}
+            GridState::Flagged => {
+                flag_count += 1;
+            }
             GridState::Unrevealed => {
                 unrevealed_count += 1;
                 unrevealed_pos.get_or_insert((x2, y2));
             }
-            _ => { return None; }
+            _ => {
+                return None;
+            }
         }
     }
 
