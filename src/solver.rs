@@ -7,13 +7,13 @@ pub fn get_next_move(game: &MinesweeperGame) -> GameMove {
         return GameMove::NoOp;
     }
 
-    // special case for first move: just pick 0,0
-    if game.revealed_count() == 0 {
-        return GameMove::Reveal(0, 0);
-    }
-
     let w = game.width();
     let h = game.height();
+
+    // special case for first move: just pick the middle
+    if game.revealed_count() == 0 {
+        return GameMove::Reveal(w/2, h/2);
+    }
 
     // first check for any logically consistent moves
     for y in 0..h {
