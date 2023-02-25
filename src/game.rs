@@ -166,6 +166,22 @@ impl MinesweeperGame {
         self.revealed_count
     }
 
+    pub fn neighbors(&self, x: u32, y: u32) -> Vec<(u32, u32)> {
+        // Naively, we'd like to look at [x-1, x, x+1], but because x/y are u32, we can't actually calculate x-1 when x is 0.
+        // So use a little trick to check bounds+1 on [x, x+1, x+2], and then subtract 1 when in bounds.
+        let mut result = Vec::new();
+        for ny in y..=y + 2 {
+            if ny > 0 && ny <= self.height() {
+                for nx in x..=x + 2 {
+                    if nx > 0 && nx <= self.width() {
+                        result.push((nx - 1, ny - 1));
+                    }
+                }
+            }
+        }
+        result
+    }
+
     pub fn peek_at(&self, x: u32, y: u32, show_actual: bool) -> GridState {
         let i = pos_to_index(x, y, self.width());
         let (state, revealed, flagged) = (self.grid[i], self.revealed[i], self.flagged[i]);
@@ -238,16 +254,8 @@ impl MinesweeperGame {
         match self.grid[i] {
             GridState::Empty => {
                 // Also reveal neighbors
-                // Naively, we'd like to look at [x-1, x, x+1], but because x/y are u32, we can't actually calculate x-1 when x is 0.
-                // So use a little trick to check bounds+1 on [x, x+1, x+2], and then subtract 1 when in bounds.
-                for y2 in y..=y + 2 {
-                    if y2 > 0 && y2 <= self.height() {
-                        for x2 in x..=x + 2 {
-                            if x2 > 0 && x2 <= self.width() {
-                                self.reveal(x2 - 1, y2 - 1);
-                            }
-                        }
-                    }
+                for (nx, ny) in self.neighbors(x, y) {
+                    self.reveal(nx, ny);
                 }
             }
             GridState::Count(_) => {}

@@ -33,36 +33,20 @@ pub fn get_next_move(game: &MinesweeperGame) -> GameMove {
     GameMove::NoOp
 }
 
-fn neighbors(x: u32, y: u32, w: u32, h: u32) -> Vec<(u32, u32)> {
-    let mut result = Vec::new();
-    for y2 in y..=y + 2 {
-        if y2 > 0 && y2 <= h {
-            for x2 in x..=x + 2 {
-                if x2 > 0 && x2 <= w {
-                    result.push((x2 - 1, y2 - 1));
-                }
-            }
-        }
-    }
-    result
-}
-
 fn logical_move_around_count(
     x: u32,
     y: u32,
     count: u8,
     game: &MinesweeperGame,
 ) -> Option<GameMove> {
-    let w = game.width();
-    let h = game.height();
 
     // count the unrevealed positions around a point, as well as any existing flags
     let mut flag_count = 0;
     let mut unrevealed_count = 0;
     let mut unrevealed_pos: Option<(u32, u32)> = None;
 
-    for (x2, y2) in neighbors(x, y, w, h) {
-        let neighbor_state = game.peek_at(x2, y2, false);
+    for (nx, ny) in game.neighbors(x, y) {
+        let neighbor_state = game.peek_at(nx, ny, false);
         match neighbor_state {
             GridState::Empty | GridState::Count(_) => {}
             GridState::Flagged => {
@@ -70,7 +54,7 @@ fn logical_move_around_count(
             }
             GridState::Unrevealed => {
                 unrevealed_count += 1;
-                unrevealed_pos.get_or_insert((x2, y2));
+                unrevealed_pos.get_or_insert((nx, ny));
             }
             _ => {
                 return None;
@@ -78,15 +62,15 @@ fn logical_move_around_count(
         }
     }
 
-    if let Some((x2, y2)) = unrevealed_pos {
-        // if the count on this point matches the number of unresolved neighbors plus any existing flags, then we can flag this point
+    if let Some((nx, ny)) = unrevealed_pos {
+        // if the count on this point matches the number of unresolved neighbors plus any existing flags, then we can flag that unresolved neighbor
         if count == unrevealed_count + flag_count {
-            return Some(GameMove::Flag(x2, y2));
+            return Some(GameMove::Flag(nx, ny));
         }
 
         // if the count on this point already matches the number of flags around it, then we can reveal the remaining unresolved neighbors
         if count == flag_count {
-            return Some(GameMove::Reveal(x2, y2));
+            return Some(GameMove::Reveal(nx, ny));
         }
     }
 
