@@ -2,41 +2,51 @@ use rand::prelude::SliceRandom;
 use std::time::{Duration, Instant};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum Difficulty {
-    Beginner,
-    Intermediate,
-    Expert,
-    Custom {
-        width: u32,
-        height: u32,
-        mines: usize,
-    },
+pub struct GameConfig {
+    width: u32,
+    height: u32,
+    mines: usize,
 }
 
-impl Difficulty {
-    fn size(self) -> (u32, u32) {
-        use Difficulty::*;
-        match self {
-            Beginner => (9, 9),
-            Intermediate => (16, 16),
-            Expert => (30, 16),
-            Custom { width, height, .. } => (width, height),
+impl GameConfig {
+    pub const BEGINNER: GameConfig = GameConfig {
+        width: 9,
+        height: 9,
+        mines: 10,
+    };
+    pub const INTERMEDIATE: GameConfig = GameConfig {
+        width: 16,
+        height: 16,
+        mines: 40,
+    };
+    pub const EXPERT: GameConfig = GameConfig {
+        width: 32,
+        height: 16,
+        mines: 99,
+    };
+
+    pub fn new(width: u32, height: u32, mines: usize) -> Self {
+        Self {
+            width,
+            height,
+            mines,
         }
     }
 
-    fn mines(self) -> usize {
-        use Difficulty::*;
-        match self {
-            Beginner => 10,
-            Intermediate => 40,
-            Expert => 99,
-            Custom { mines, .. } => mines,
-        }
+    pub fn width(&self) -> u32 {
+        self.width
     }
 
-    fn total_size(self) -> usize {
-        let (w, h) = self.size();
-        (w * h) as usize
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn mines(&self) -> usize {
+        self.mines
+    }
+
+    pub fn total_size(&self) -> usize {
+        (self.width * self.height) as usize
     }
 }
 
@@ -80,7 +90,7 @@ pub enum GridState {
 }
 
 pub struct MinesweeperGame {
-    difficulty: Difficulty,
+    config: GameConfig,
     state: GameState,
     mines_remaining: i32,
     grid: Vec<GridState>,
@@ -92,33 +102,33 @@ pub struct MinesweeperGame {
 
 impl Default for MinesweeperGame {
     fn default() -> Self {
-        Self::new(Difficulty::Beginner)
+        Self::new(GameConfig::BEGINNER)
     }
 }
 
 impl MinesweeperGame {
-    pub fn new(difficulty: Difficulty) -> Self {
-        let mines = generate_mines(difficulty.mines(), difficulty.total_size());
-        MinesweeperGame::with_mines(difficulty, &mines)
+    pub fn new(config: GameConfig) -> Self {
+        let mines = generate_mines(config.mines(), config.total_size());
+        MinesweeperGame::with_mines(config, &mines)
     }
 
-    pub fn with_mines(difficulty: Difficulty, mine_positions: &[usize]) -> Self {
+    pub fn with_mines(config: GameConfig, mine_positions: &[usize]) -> Self {
         assert!(
-            difficulty.mines() <= difficulty.total_size(),
+            config.mines() <= config.total_size(),
             "Too many mines for grid size"
         );
         assert_eq!(
-            difficulty.mines(),
+            config.mines(),
             mine_positions.len(),
-            "Explicit mine_positions must match the number of mines for the difficulty"
+            "Explicit mine_positions must match the number of mines for the config"
         );
 
-        let grid = initialize_grid(difficulty, mine_positions);
+        let grid = initialize_grid(&config, mine_positions);
         let flagged = vec![false; grid.len()];
         let revealed = vec![false; grid.len()];
 
         MinesweeperGame {
-            difficulty,
+            config,
             state: GameState::Reset,
             mines_remaining: mine_positions.len() as i32,
             grid,
@@ -129,8 +139,8 @@ impl MinesweeperGame {
         }
     }
 
-    pub fn difficulty(&self) -> Difficulty {
-        self.difficulty
+    pub fn config(&self) -> GameConfig {
+        self.config
     }
 
     pub fn state(&self) -> GameState {
@@ -142,19 +152,15 @@ impl MinesweeperGame {
     }
 
     pub fn total_size(&self) -> usize {
-        self.difficulty.total_size()
-    }
-
-    pub fn size(&self) -> (u32, u32) {
-        self.difficulty.size()
+        self.config.total_size()
     }
 
     pub fn width(&self) -> u32 {
-        self.size().0
+        self.config.width()
     }
 
     pub fn height(&self) -> u32 {
-        self.size().1
+        self.config.height()
     }
 
     pub fn mines_remaining(&self) -> i32 {
@@ -277,7 +283,7 @@ impl MinesweeperGame {
 
         if !self.game_over() {
             // Check if revealing this completes the game
-            if self.revealed_count == self.total_size() - self.difficulty.mines() {
+            if self.revealed_count == self.total_size() - self.config.mines() {
                 self.state = GameState::Completed;
                 self.timer.end();
                 // Flag all mines when game ends successfully
@@ -337,17 +343,18 @@ fn generate_mines(mines: usize, size: usize) -> Vec<usize> {
     result.into_iter().take(mines).collect()
 }
 
-fn initialize_grid(difficulty: Difficulty, mine_positions: &[usize]) -> Vec<GridState> {
+fn initialize_grid(config: &GameConfig, mine_positions: &[usize]) -> Vec<GridState> {
     use GridState::*;
 
-    let size = difficulty.total_size();
+    let size = config.total_size();
     let mut grid = vec![GridState::Empty; size];
 
     for i in mine_positions {
         grid[*i] = Mine;
     }
 
-    let (w, h) = difficulty.size();
+    let w = config.width();
+    let h = config.height();
     for x in 0..w {
         for y in 0..h {
             let i = pos_to_index(x, y, w);

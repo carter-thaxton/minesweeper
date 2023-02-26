@@ -1,4 +1,4 @@
-use crate::game::{Difficulty, GameState, GridState, MinesweeperGame};
+use crate::game::{GameConfig, GameState, GridState, MinesweeperGame};
 use crate::solver::get_next_move;
 use crate::sprites::{SpriteType, Sprites};
 use egui::{vec2, Align, Direction, Key, Ui};
@@ -58,7 +58,7 @@ impl eframe::App for MinesweeperApp {
                             let face = sprite_for_game_state(self.game.state());
                             let reset = self.sprites.button(ui, face, 1.5).clicked();
                             if reset {
-                                self.game = MinesweeperGame::new(self.game.difficulty());
+                                self.game = MinesweeperGame::new(self.game.config());
                             }
                         },
                     );
@@ -90,16 +90,16 @@ impl eframe::App for MinesweeperApp {
             .exact_height(bottom_height)
             .show_separator_line(false)
             .show(ctx, |ui| {
-                let mut difficulty = self.game.difficulty();
+                let mut config = self.game.config();
 
                 ui.with_layout(egui::Layout::left_to_right(Align::Center), |ui| {
-                    ui.radio_value(&mut difficulty, Difficulty::Beginner, "Beginner");
-                    ui.radio_value(&mut difficulty, Difficulty::Intermediate, "Intermediate");
-                    ui.radio_value(&mut difficulty, Difficulty::Expert, "Expert");
+                    ui.radio_value(&mut config, GameConfig::BEGINNER, "Beginner");
+                    ui.radio_value(&mut config, GameConfig::INTERMEDIATE, "Intermediate");
+                    ui.radio_value(&mut config, GameConfig::EXPERT, "Expert");
                 });
 
-                if difficulty != self.game.difficulty() {
-                    self.game = MinesweeperGame::new(difficulty);
+                if config != self.game.config() {
+                    self.game = MinesweeperGame::new(config);
                 }
             });
 
