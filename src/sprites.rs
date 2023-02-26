@@ -40,17 +40,18 @@ pub enum SpriteType {
 
 impl SpriteType {
     pub fn digit(digit: u32) -> Self {
+        use SpriteType::*;
         match digit {
-            0 => SpriteType::Digit0,
-            1 => SpriteType::Digit1,
-            2 => SpriteType::Digit2,
-            3 => SpriteType::Digit3,
-            4 => SpriteType::Digit4,
-            5 => SpriteType::Digit5,
-            6 => SpriteType::Digit6,
-            7 => SpriteType::Digit7,
-            8 => SpriteType::Digit8,
-            9 => SpriteType::Digit9,
+            0 => Digit0,
+            1 => Digit1,
+            2 => Digit2,
+            3 => Digit3,
+            4 => Digit4,
+            5 => Digit5,
+            6 => Digit6,
+            7 => Digit7,
+            8 => Digit8,
+            9 => Digit9,
             _ => {
                 panic!("digit out of bounds");
             }
@@ -58,16 +59,17 @@ impl SpriteType {
     }
 
     pub fn block_digit(digit: u32) -> Self {
+        use SpriteType::*;
         match digit {
-            0 => SpriteType::BlockEmptyDown,
-            1 => SpriteType::Block1,
-            2 => SpriteType::Block2,
-            3 => SpriteType::Block3,
-            4 => SpriteType::Block4,
-            5 => SpriteType::Block5,
-            6 => SpriteType::Block6,
-            7 => SpriteType::Block7,
-            8 => SpriteType::Block8,
+            0 => BlockEmptyDown,
+            1 => Block1,
+            2 => Block2,
+            3 => Block3,
+            4 => Block4,
+            5 => Block5,
+            6 => Block6,
+            7 => Block7,
+            8 => Block8,
             _ => {
                 panic!("digit out of bounds");
             }
@@ -81,41 +83,42 @@ impl SpriteType {
 
     #[rustfmt::skip]
     fn pixels(&self) -> (u32, u32, u32, u32) {
+        use SpriteType::*;
         match self {
-            SpriteType::Digit1 => (0,   0, 13, 23),
-            SpriteType::Digit2 => (14,  0, 13, 23),
-            SpriteType::Digit3 => (28,  0, 13, 23),
-            SpriteType::Digit4 => (42,  0, 13, 23),
-            SpriteType::Digit5 => (56,  0, 13, 23),
-            SpriteType::Digit6 => (70,  0, 13, 23),
-            SpriteType::Digit7 => (84,  0, 13, 23),
-            SpriteType::Digit8 => (98,  0, 13, 23),
-            SpriteType::Digit9 => (112, 0, 13, 23),
-            SpriteType::Digit0 => (126, 0, 13, 23),
+            Digit1 => (0,   0, 13, 23),
+            Digit2 => (14,  0, 13, 23),
+            Digit3 => (28,  0, 13, 23),
+            Digit4 => (42,  0, 13, 23),
+            Digit5 => (56,  0, 13, 23),
+            Digit6 => (70,  0, 13, 23),
+            Digit7 => (84,  0, 13, 23),
+            Digit8 => (98,  0, 13, 23),
+            Digit9 => (112, 0, 13, 23),
+            Digit0 => (126, 0, 13, 23),
 
-            SpriteType::FaceSmileyUp        => (0,   24, 26, 26),
-            SpriteType::FaceSmileyDown      => (27,  24, 26, 26),
-            SpriteType::FaceRuhRoh          => (54,  24, 26, 26),
-            SpriteType::FaceCool            => (81,  24, 26, 26),
-            SpriteType::FaceXXX             => (108, 24, 26, 26),
+            FaceSmileyUp        => (0,   24, 26, 26),
+            FaceSmileyDown      => (27,  24, 26, 26),
+            FaceRuhRoh          => (54,  24, 26, 26),
+            FaceCool            => (81,  24, 26, 26),
+            FaceXXX             => (108, 24, 26, 26),
 
-            SpriteType::BlockEmptyUp        => (0,   51, 16, 16),
-            SpriteType::BlockEmptyDown      => (17,  51, 16, 16),
-            SpriteType::BlockFlag           => (34,  51, 16, 16),
-            SpriteType::BlockQuestionUp     => (51,  51, 16, 16),
-            SpriteType::BlockQuestionDown   => (68,  51, 16, 16),
-            SpriteType::BlockMine           => (85,  51, 16, 16),
-            SpriteType::BlockMineRed        => (102, 51, 16, 16),
-            SpriteType::BlockMineX          => (119, 51, 16, 16),
+            BlockEmptyUp        => (0,   51, 16, 16),
+            BlockEmptyDown      => (17,  51, 16, 16),
+            BlockFlag           => (34,  51, 16, 16),
+            BlockQuestionUp     => (51,  51, 16, 16),
+            BlockQuestionDown   => (68,  51, 16, 16),
+            BlockMine           => (85,  51, 16, 16),
+            BlockMineRed        => (102, 51, 16, 16),
+            BlockMineX          => (119, 51, 16, 16),
 
-            SpriteType::Block1 => (0,   68, 16, 16),
-            SpriteType::Block2 => (17,  68, 16, 16),
-            SpriteType::Block3 => (34,  68, 16, 16),
-            SpriteType::Block4 => (51,  68, 16, 16),
-            SpriteType::Block5 => (68,  68, 16, 16),
-            SpriteType::Block6 => (85,  68, 16, 16),
-            SpriteType::Block7 => (102, 68, 16, 16),
-            SpriteType::Block8 => (119, 68, 16, 16),
+            Block1 => (0,   68, 16, 16),
+            Block2 => (17,  68, 16, 16),
+            Block3 => (34,  68, 16, 16),
+            Block4 => (51,  68, 16, 16),
+            Block5 => (68,  68, 16, 16),
+            Block6 => (85,  68, 16, 16),
+            Block7 => (102, 68, 16, 16),
+            Block8 => (119, 68, 16, 16),
         }
     }
 

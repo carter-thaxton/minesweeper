@@ -157,21 +157,25 @@ fn minesweeper_grid(
 }
 
 fn sprite_for_game_state(state: GameState) -> SpriteType {
+    use GameState::*;
+    use SpriteType::*;
     match state {
-        GameState::Reset | GameState::Playing => SpriteType::FaceSmileyUp,
-        GameState::Completed => SpriteType::FaceCool,
-        GameState::Dead => SpriteType::FaceXXX,
+        Reset | Playing => FaceSmileyUp,
+        Completed => FaceCool,
+        Dead => FaceXXX,
     }
 }
 
 fn sprite_for_grid(state: GridState) -> SpriteType {
+    use GridState::*;
+    use SpriteType::*;
     match state {
-        GridState::Empty => SpriteType::BlockEmptyDown,
-        GridState::Count(count) => SpriteType::block_digit(count.into()),
-        GridState::Mine => SpriteType::BlockMine,
-        GridState::Unrevealed => SpriteType::BlockEmptyUp,
-        GridState::Flagged => SpriteType::BlockFlag,
-        GridState::MineHighlighted => SpriteType::BlockMineRed,
-        GridState::MineIncorrect => SpriteType::BlockMineX,
+        Empty => BlockEmptyDown,
+        Count(count) => SpriteType::block_digit(count.into()),
+        Mine => BlockMine,
+        Unrevealed => BlockEmptyUp,
+        Flagged => BlockFlag,
+        MineHighlighted => BlockMineRed,
+        MineIncorrect => BlockMineX,
     }
 }
