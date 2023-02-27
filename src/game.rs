@@ -275,6 +275,7 @@ impl MinesweeperGame {
             Count(_) => {}
             Mine => {
                 self.state = GameState::Dead;
+                self.timer.end();
             }
             _ => {
                 panic!("Invalid state in grid");
