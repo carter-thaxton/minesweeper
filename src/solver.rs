@@ -14,12 +14,22 @@ pub fn get_next_move(game: &MinesweeperGame) -> GameMove {
         return GameMove::Reveal(w / 2, h / 2);
     }
 
-    // first check for any logically consistent moves
+    // when there are only as many unrevealed squares as mines remaining, we can just reveal the rest
+    if game.unrevealed_count() as isize == game.mines_remaining() {
+        for y in 0..h {
+            for x in 0..w {
+                let state = game.peek_at(x, y, false);
+                if let GridState::Unrevealed = state {
+                    return GameMove::Reveal(x, y);
+                }
+            }
+        }
+    }
+
+    // check for any logically consistent moves around a square with a count
     for y in 0..h {
         for x in 0..w {
             let state = game.peek_at(x, y, false);
-            //println!("=== Point: {x},{y} - {state:?}");
-
             if let GridState::Count(count) = state {
                 if let Some(m) = logical_move_around_count(x, y, count, game) {
                     return m;

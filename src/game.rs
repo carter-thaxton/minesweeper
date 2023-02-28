@@ -92,10 +92,10 @@ pub enum GridState {
 pub struct MinesweeperGame {
     config: GameConfig,
     state: GameState,
-    mines_remaining: i32,
     grid: Vec<GridState>,
     flagged: Vec<bool>,
     revealed: Vec<bool>,
+    flagged_count: usize,
     revealed_count: usize,
     timer: Timer,
 }
@@ -130,11 +130,11 @@ impl MinesweeperGame {
         MinesweeperGame {
             config,
             state: GameState::Reset,
-            mines_remaining: mine_positions.len() as i32,
             grid,
             flagged,
             revealed,
             revealed_count: 0,
+            flagged_count: 0,
             timer: Timer::default(),
         }
     }
@@ -163,8 +163,9 @@ impl MinesweeperGame {
         self.config.height()
     }
 
-    pub fn mines_remaining(&self) -> i32 {
-        self.mines_remaining
+    pub fn mines_remaining(&self) -> isize {
+        // may go negative if player flags too many positions
+        self.config.mines() as isize - self.flagged_count as isize
     }
 
     pub fn timer_elapsed(&self) -> Duration {
@@ -173,6 +174,14 @@ impl MinesweeperGame {
 
     pub fn revealed_count(&self) -> usize {
         self.revealed_count
+    }
+
+    pub fn flagged_count(&self) -> usize {
+        self.flagged_count
+    }
+
+    pub fn unrevealed_count(&self) -> usize {
+        self.total_size() - self.revealed_count - self.flagged_count
     }
 
     pub fn neighbors(&self, x: u32, y: u32) -> Vec<(u32, u32)> {
@@ -291,6 +300,7 @@ impl MinesweeperGame {
                 for j in 0..self.grid.len() {
                     if self.grid[j] == Mine {
                         self.flagged[j] = true;
+                        self.flagged_count += 1;
                     }
                 }
             }
@@ -312,10 +322,10 @@ impl MinesweeperGame {
         if !self.revealed[i] {
             if self.flagged[i] {
                 self.flagged[i] = false;
-                self.mines_remaining += 1;
+                self.flagged_count -= 1;
             } else {
                 self.flagged[i] = true;
-                self.mines_remaining -= 1;
+                self.flagged_count += 1;
             }
         }
         self.flagged[i]
