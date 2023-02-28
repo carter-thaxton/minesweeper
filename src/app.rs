@@ -74,7 +74,7 @@ impl eframe::App for MinesweeperApp {
 
         // central panel, with minesweeper grid
         egui::CentralPanel::default().show(ctx, |ui| {
-            let hint = ctx.input(|i| i.key_down(Key::H));
+            let hint = ctx.input(|i| i.key_down(Key::H) && i.modifiers.shift_only());
             let clicked_pos = minesweeper_grid(ui, &self.sprites, &self.game, hint);
 
             if let Some((x, y, right)) = clicked_pos {
