@@ -57,6 +57,7 @@ impl eframe::App for MinesweeperApp {
                         |ui| {
                             let face = sprite_for_game_state(self.game.state());
                             let reset = self.sprites.button(ui, face, 1.5).clicked();
+                            let reset = reset || ctx.input(|i| i.key_pressed(Key::R));
                             if reset {
                                 self.game = MinesweeperGame::new(self.game.config());
                             }
