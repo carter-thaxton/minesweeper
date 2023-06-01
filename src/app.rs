@@ -4,18 +4,10 @@ use crate::sprites::{SpriteType, Sprites};
 use egui::{vec2, Align, Direction, Key, Ui};
 use std::time::Duration;
 
+#[derive(Default)]
 pub struct MinesweeperApp {
     sprites: Sprites,
     game: MinesweeperGame,
-}
-
-impl Default for MinesweeperApp {
-    fn default() -> Self {
-        Self {
-            sprites: Sprites::default(),
-            game: MinesweeperGame::default(),
-        }
-    }
 }
 
 impl MinesweeperApp {

@@ -369,6 +369,8 @@ fn initialize_grid(config: &GameConfig, mine_positions: &[usize]) -> Vec<GridSta
     for x in 0..w {
         for y in 0..h {
             let i = pos_to_index(x, y, w);
+
+            #[allow(clippy::collapsible_if)]
             if grid[i] == Empty {
                 let mut count = 0;
 
@@ -428,18 +430,10 @@ fn initialize_grid(config: &GameConfig, mine_positions: &[usize]) -> Vec<GridSta
     grid
 }
 
+#[derive(Default)]
 struct Timer {
     start_time: Option<Instant>,
     end_time: Option<Instant>,
-}
-
-impl Default for Timer {
-    fn default() -> Self {
-        Timer {
-            start_time: None,
-            end_time: None,
-        }
-    }
 }
 
 impl Timer {
