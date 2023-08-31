@@ -49,8 +49,6 @@ fn logical_move_around_count(
     count: u8,
     game: &MinesweeperGame,
 ) -> Option<GameMove> {
-    use GridState::*;
-
     // count the unrevealed positions around a point, as well as any existing flags
     let mut flag_count = 0;
     let mut unrevealed_count = 0;
@@ -59,11 +57,11 @@ fn logical_move_around_count(
     for (nx, ny) in game.neighbors(x, y) {
         let neighbor_state = game.peek_at(nx, ny, false);
         match neighbor_state {
-            Empty | Count(_) => {}
-            Flagged => {
+            GridState::Empty | GridState::Count(_) => {}
+            GridState::Flagged => {
                 flag_count += 1;
             }
-            Unrevealed => {
+            GridState::Unrevealed => {
                 unrevealed_count += 1;
                 unrevealed_pos.get_or_insert((nx, ny));
             }

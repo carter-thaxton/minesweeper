@@ -67,10 +67,9 @@ pub enum GameState {
 
 impl GameState {
     pub fn game_over(self) -> bool {
-        use GameState::*;
         match self {
-            Reset | Playing => false,
-            Completed | Dead => true,
+            GameState::Reset | GameState::Playing => false,
+            GameState::Completed | GameState::Dead => true,
         }
     }
 }
@@ -201,42 +200,40 @@ impl MinesweeperGame {
     }
 
     pub fn peek_at(&self, x: u32, y: u32, show_actual: bool) -> GridState {
-        use GridState::*;
-
         let i = pos_to_index(x, y, self.width());
         let (state, revealed, flagged) = (self.grid[i], self.revealed[i], self.flagged[i]);
         let game_over = self.game_over();
 
         if !revealed && !show_actual {
             if flagged {
-                if game_over && state != Mine {
-                    MineIncorrect
+                if game_over && state != GridState::Mine {
+                    GridState::MineIncorrect
                 } else {
-                    Flagged
+                    GridState::Flagged
                 }
-            } else if game_over && state == Mine {
-                Mine
+            } else if game_over && state == GridState::Mine {
+                GridState::Mine
             } else {
-                Unrevealed
+                GridState::Unrevealed
             }
         } else if flagged {
             match state {
-                Empty => MineIncorrect,
-                Count(_) => MineIncorrect,
-                Mine => Mine,
+                GridState::Empty => GridState::MineIncorrect,
+                GridState::Count(_) => GridState::MineIncorrect,
+                GridState::Mine => GridState::Mine,
                 _ => {
                     panic!("Invalid state in grid");
                 }
             }
         } else {
             match state {
-                Empty => Empty,
-                Count(count) => Count(count),
-                Mine => {
+                GridState::Empty => GridState::Empty,
+                GridState::Count(count) => GridState::Count(count),
+                GridState::Mine => {
                     if revealed {
-                        MineHighlighted
+                        GridState::MineHighlighted
                     } else {
-                        Mine
+                        GridState::Mine
                     }
                 }
                 _ => {
@@ -247,17 +244,14 @@ impl MinesweeperGame {
     }
 
     pub fn make_move(&mut self, m: GameMove) -> bool {
-        use GameMove::*;
         match m {
-            NoOp => false,
-            Reveal(x, y) => self.reveal(x, y),
-            Flag(x, y) => self.toggle_flag(x, y),
+            GameMove::NoOp => false,
+            GameMove::Reveal(x, y) => self.reveal(x, y),
+            GameMove::Flag(x, y) => self.toggle_flag(x, y),
         }
     }
 
     pub fn reveal(&mut self, x: u32, y: u32) -> bool {
-        use GridState::*;
-
         if self.game_over() {
             return false;
         }
@@ -275,14 +269,14 @@ impl MinesweeperGame {
         self.revealed_count += 1;
 
         match self.grid[i] {
-            Empty => {
+            GridState::Empty => {
                 // Also reveal neighbors
                 for (nx, ny) in self.neighbors(x, y) {
                     self.reveal(nx, ny);
                 }
             }
-            Count(_) => {}
-            Mine => {
+            GridState::Count(_) => {}
+            GridState::Mine => {
                 self.state = GameState::Dead;
                 self.timer.end();
             }
@@ -298,7 +292,7 @@ impl MinesweeperGame {
                 self.timer.end();
                 // Flag all mines when game ends successfully
                 for j in 0..self.grid.len() {
-                    if self.grid[j] == Mine {
+                    if self.grid[j] == GridState::Mine {
                         self.flagged[j] = true;
                         self.flagged_count += 1;
                     }
@@ -355,13 +349,11 @@ fn generate_mines(mines: usize, size: usize) -> Vec<usize> {
 }
 
 fn initialize_grid(config: &GameConfig, mine_positions: &[usize]) -> Vec<GridState> {
-    use GridState::*;
-
     let size = config.total_size();
     let mut grid = vec![GridState::Empty; size];
 
     for i in mine_positions {
-        grid[*i] = Mine;
+        grid[*i] = GridState::Mine;
     }
 
     let w = config.width();
@@ -371,57 +363,57 @@ fn initialize_grid(config: &GameConfig, mine_positions: &[usize]) -> Vec<GridSta
             let i = pos_to_index(x, y, w);
 
             #[allow(clippy::collapsible_if)]
-            if grid[i] == Empty {
+            if grid[i] == GridState::Empty {
                 let mut count = 0;
 
                 if x > 0 {
-                    if grid[i - 1] == Mine {
+                    if grid[i - 1] == GridState::Mine {
                         count += 1
                     }; // left
                 }
                 if x < w - 1 {
-                    if grid[i + 1] == Mine {
+                    if grid[i + 1] == GridState::Mine {
                         count += 1
                     }; // right
                 }
 
                 if y > 0 {
                     let j = pos_to_index(x, y - 1, w);
-                    if grid[j] == Mine {
+                    if grid[j] == GridState::Mine {
                         count += 1
                     }; // up
                     if x > 0 {
-                        if grid[j - 1] == Mine {
+                        if grid[j - 1] == GridState::Mine {
                             count += 1
                         }; // up-left
                     }
                     if x < w - 1 {
-                        if grid[j + 1] == Mine {
+                        if grid[j + 1] == GridState::Mine {
                             count += 1
                         }; // up-right
                     }
                 }
                 if y < h - 1 {
                     let j = pos_to_index(x, y + 1, w);
-                    if grid[j] == Mine {
+                    if grid[j] == GridState::Mine {
                         count += 1
                     }; // down
                     if x > 0 {
-                        if grid[j - 1] == Mine {
+                        if grid[j - 1] == GridState::Mine {
                             count += 1
                         }; // down-left
                     }
                     if x < w - 1 {
-                        if grid[j + 1] == Mine {
+                        if grid[j + 1] == GridState::Mine {
                             count += 1
                         }; // down-right
                     }
                 }
 
                 if count > 0 {
-                    grid[i] = Count(count);
+                    grid[i] = GridState::Count(count);
                 } else {
-                    grid[i] = Empty;
+                    grid[i] = GridState::Empty;
                 }
             }
         }
