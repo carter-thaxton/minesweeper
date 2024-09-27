@@ -1,5 +1,4 @@
-use egui::{pos2, vec2, Direction, Image, ImageButton, Rect, Response, Ui, Vec2};
-use egui_extras::RetainedImage;
+use egui::{pos2, vec2, Direction, Image, ImageButton, ImageSource, Rect, Response, Ui, Vec2};
 
 pub enum SpriteType {
     Digit0,
@@ -141,43 +140,39 @@ impl SpriteType {
 }
 
 pub struct Sprites {
-    spritesheet: RetainedImage,
+    spritesheet: ImageSource<'static>,
 }
 
 impl Default for Sprites {
     fn default() -> Self {
         Sprites {
-            spritesheet: RetainedImage::from_image_bytes(
-                "minesweeper_spritesheet.png",
-                include_bytes!("../assets/minesweeper_spritesheet.png"),
-            )
-            .unwrap(),
+            spritesheet: egui::include_image!("../assets/minesweeper_spritesheet.png"),
         }
     }
 }
 
 impl Sprites {
     pub fn button(&self, ui: &mut Ui, sprite: SpriteType, zoom: f32) -> Response {
-        let texture_id = self.spritesheet.texture_id(ui.ctx());
-
-        let size = sprite.size() * zoom;
-        let rect = sprite.rect();
+        let image = self.image_helper(sprite, zoom);
+        let button = ImageButton::new(image);
 
         ui.spacing_mut().button_padding = vec2(0.0, 0.0);
-        let button = ImageButton::new(texture_id, size).uv(rect);
-
         ui.add(button)
     }
 
     pub fn image(&self, ui: &mut Ui, sprite: SpriteType, zoom: f32) -> Response {
-        let texture_id = self.spritesheet.texture_id(ui.ctx());
+        let image = self.image_helper(sprite, zoom);
+        ui.add(image)
+    }
 
+    fn image_helper(&self, sprite: SpriteType, zoom: f32) -> Image<'_> {
         let size = sprite.size() * zoom;
         let rect = sprite.rect();
 
-        let image = Image::new(texture_id, size).uv(rect);
-
-        ui.add(image)
+        Image::new(self.spritesheet.clone())
+            .maintain_aspect_ratio(false)
+            .fit_to_exact_size(size)
+            .uv(rect)
     }
 
     pub fn digit(&self, ui: &mut Ui, digit: u32, zoom: f32) {

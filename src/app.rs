@@ -1,7 +1,7 @@
 use crate::game::{GameConfig, GameState, GridState, MinesweeperGame};
 use crate::solver::get_next_move;
 use crate::sprites::{SpriteType, Sprites};
-use egui::{vec2, Align, Direction, Key, Ui};
+use egui::{vec2, Align, Direction, Key, Ui, ViewportCommand};
 use std::time::Duration;
 
 #[derive(Default)]
@@ -18,7 +18,7 @@ impl MinesweeperApp {
 }
 
 impl eframe::App for MinesweeperApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let top_height = 42.0;
         let bottom_height = 42.0;
 
@@ -101,7 +101,7 @@ impl eframe::App for MinesweeperApp {
             32. * self.game.width() as f32 + 10.,
             32. * self.game.height() as f32 + 10. + top_height + bottom_height,
         );
-        frame.set_window_size(window_size);
+        ctx.send_viewport_cmd(ViewportCommand::InnerSize(window_size));
 
         // ensure the timer increments while playing, even if no user interaction
         if self.game.state() == GameState::Playing {

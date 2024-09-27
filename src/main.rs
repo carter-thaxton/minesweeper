@@ -12,13 +12,16 @@ fn main() -> eframe::Result<()> {
     //tracing_subscriber::fmt::init();
 
     let native_options = eframe::NativeOptions {
-        resizable: false,
+        viewport: egui::ViewportBuilder::default().with_resizable(false),
         ..Default::default()
     };
 
     eframe::run_native(
         "Minesweeper",
         native_options,
-        Box::new(|cc| Box::new(app::MinesweeperApp::new(cc))),
+        Box::new(|cc| {
+            egui_extras::install_image_loaders(&cc.egui_ctx);
+            Ok(Box::new(app::MinesweeperApp::new(cc)))
+        }),
     )
 }
