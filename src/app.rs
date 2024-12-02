@@ -125,7 +125,6 @@ fn minesweeper_grid(
 
     ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
 
-    let mut i = 0;
     ui.vertical(|ui| {
         for y in 0..game.height() {
             ui.horizontal(|ui| {
@@ -139,8 +138,6 @@ fn minesweeper_grid(
                     if clicked || right_clicked {
                         result = Some((x, y, right_clicked))
                     }
-
-                    i += 1;
                 }
             });
         }
