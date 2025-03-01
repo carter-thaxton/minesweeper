@@ -342,7 +342,7 @@ fn generate_mines(mines: usize, size: usize) -> Vec<usize> {
         return result;
     }
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     result.shuffle(&mut rng);
 
     result.into_iter().take(mines).collect()
