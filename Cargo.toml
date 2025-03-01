@@ -10,8 +10,8 @@ description = "Classic Minesweeper using egui/eframe"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = "0.29.0"
-egui = "0.29.0"
-egui_extras = { version = "0.29.0", features = ["image"] }
+eframe = "0.31.0"
+egui = "0.31.0"
+egui_extras = { version = "0.31.0", features = ["image"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 rand = "0.9.0"
