@@ -154,7 +154,7 @@ impl Default for Sprites {
 impl Sprites {
     pub fn button(&self, ui: &mut Ui, sprite: SpriteType, zoom: f32) -> Response {
         let image = self.image_helper(sprite, zoom);
-        let button = Button::image(image);
+        let button = Button::image(image).frame(false);
 
         ui.spacing_mut().button_padding = vec2(0.0, 0.0);
         ui.add(button)
