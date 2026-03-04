@@ -1,4 +1,4 @@
-use egui::{pos2, vec2, Direction, Image, ImageButton, ImageSource, Rect, Response, Ui, Vec2};
+use egui::{pos2, vec2, Button, Direction, Image, ImageSource, Rect, Response, Ui, Vec2};
 
 pub enum SpriteType {
     Digit0,
@@ -154,7 +154,7 @@ impl Default for Sprites {
 impl Sprites {
     pub fn button(&self, ui: &mut Ui, sprite: SpriteType, zoom: f32) -> Response {
         let image = self.image_helper(sprite, zoom);
-        let button = ImageButton::new(image);
+        let button = Button::image(image);
 
         ui.spacing_mut().button_padding = vec2(0.0, 0.0);
         ui.add(button)
