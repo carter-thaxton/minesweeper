@@ -1,4 +1,4 @@
-use egui::{pos2, vec2, Button, Direction, Image, ImageSource, Rect, Response, Ui, Vec2};
+use egui::{Button, Direction, Image, ImageSource, Rect, Response, Ui, Vec2, pos2, vec2};
 
 pub enum SpriteType {
     Digit0,

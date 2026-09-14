@@ -362,7 +362,6 @@ fn initialize_grid(config: &GameConfig, mine_positions: &[usize]) -> Vec<GridSta
         for y in 0..h {
             let i = pos_to_index(x, y, w);
 
-            #[allow(clippy::collapsible_if)]
             if grid[i] == GridState::Empty {
                 let mut count = 0;
 

@@ -1,7 +1,7 @@
 use crate::game::{GameConfig, GameState, GridState, MinesweeperGame};
 use crate::solver::get_next_move;
 use crate::sprites::{SpriteType, Sprites};
-use egui::{vec2, Align, Direction, Key, Ui, ViewportCommand};
+use egui::{Align, CentralPanel, Direction, Key, Layout, Panel, Ui, ViewportCommand, vec2};
 use std::time::Duration;
 
 #[derive(Default)]
@@ -18,26 +18,26 @@ impl MinesweeperApp {
 }
 
 impl eframe::App for MinesweeperApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
         let top_height = 42.0;
         let bottom_height = 42.0;
 
         // every frame, run solver for one move if S key is pressed
-        let run_solver = ctx.input(|i| i.key_pressed(Key::S));
+        let run_solver = ui.input(|i| i.key_pressed(Key::S));
         if run_solver {
             let m = get_next_move(&self.game);
             self.game.make_move(m);
         }
 
         // top panel, with numbers and faces
-        egui::TopBottomPanel::top("top")
-            .exact_height(top_height)
+        Panel::top("top")
+            .exact_size(top_height)
             .show_separator_line(false)
-            .show(ctx, |ui| {
+            .show(ui, |ui| {
                 ui.spacing_mut().item_spacing = vec2(2.0, 0.0);
 
                 ui.columns(3, |columns| {
-                    columns[0].with_layout(egui::Layout::left_to_right(Align::Center), |ui| {
+                    columns[0].with_layout(Layout::left_to_right(Align::Center), |ui| {
                         let mines_remaining =
                             self.game.mines_remaining().max(0).try_into().unwrap();
                         self.sprites
@@ -45,18 +45,18 @@ impl eframe::App for MinesweeperApp {
                     });
 
                     columns[1].with_layout(
-                        egui::Layout::centered_and_justified(Direction::LeftToRight),
+                        Layout::centered_and_justified(Direction::LeftToRight),
                         |ui| {
                             let face = sprite_for_game_state(self.game.state());
                             let reset = self.sprites.button(ui, face, 1.5).clicked();
-                            let reset = reset || ctx.input(|i| i.key_pressed(Key::R));
+                            let reset = reset || ui.input(|i| i.key_pressed(Key::R));
                             if reset {
                                 self.game = MinesweeperGame::new(self.game.config());
                             }
                         },
                     );
 
-                    columns[2].with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
+                    columns[2].with_layout(Layout::right_to_left(Align::Center), |ui| {
                         let timer_secs = self.game.timer_elapsed().as_secs().try_into().unwrap();
                         self.sprites
                             .digits(ui, timer_secs, Direction::RightToLeft, 1.5);
@@ -64,9 +64,27 @@ impl eframe::App for MinesweeperApp {
                 });
             });
 
+        // bottom panel, with options to change game size
+        Panel::bottom("bottom")
+            .exact_size(bottom_height)
+            .show_separator_line(false)
+            .show(ui, |ui| {
+                let mut config = self.game.config();
+
+                ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+                    ui.radio_value(&mut config, GameConfig::BEGINNER, "Beginner");
+                    ui.radio_value(&mut config, GameConfig::INTERMEDIATE, "Intermediate");
+                    ui.radio_value(&mut config, GameConfig::EXPERT, "Expert");
+                });
+
+                if config != self.game.config() {
+                    self.game = MinesweeperGame::new(config);
+                }
+            });
+
         // central panel, with minesweeper grid
-        egui::CentralPanel::default().show(ctx, |ui| {
-            let hint = ctx.input(|i| i.key_down(Key::H) && i.modifiers.shift_only());
+        CentralPanel::default().show(ui, |ui| {
+            let hint = ui.input(|i| i.key_down(Key::H) && i.modifiers.shift_only());
             let clicked_pos = minesweeper_grid(ui, &self.sprites, &self.game, hint);
 
             if let Some((x, y, right)) = clicked_pos {
@@ -78,34 +96,16 @@ impl eframe::App for MinesweeperApp {
             }
         });
 
-        // bottom panel, with options to change game size
-        egui::TopBottomPanel::bottom("bottom")
-            .exact_height(bottom_height)
-            .show_separator_line(false)
-            .show(ctx, |ui| {
-                let mut config = self.game.config();
-
-                ui.with_layout(egui::Layout::left_to_right(Align::Center), |ui| {
-                    ui.radio_value(&mut config, GameConfig::BEGINNER, "Beginner");
-                    ui.radio_value(&mut config, GameConfig::INTERMEDIATE, "Intermediate");
-                    ui.radio_value(&mut config, GameConfig::EXPERT, "Expert");
-                });
-
-                if config != self.game.config() {
-                    self.game = MinesweeperGame::new(config);
-                }
-            });
-
         // resize window to match contents
         let window_size = vec2(
             32. * self.game.width() as f32 + 10.,
             32. * self.game.height() as f32 + 10. + top_height + bottom_height,
         );
-        ctx.send_viewport_cmd(ViewportCommand::InnerSize(window_size));
+        ui.send_viewport_cmd(ViewportCommand::InnerSize(window_size));
 
         // ensure the timer increments while playing, even if no user interaction
         if self.game.state() == GameState::Playing {
-            ctx.request_repaint_after(Duration::from_millis(100));
+            ui.request_repaint_after(Duration::from_millis(100));
         }
     }
 }
