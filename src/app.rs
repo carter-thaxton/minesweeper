@@ -10,13 +10,6 @@ pub struct MinesweeperApp {
     game: MinesweeperGame,
 }
 
-impl MinesweeperApp {
-    /// Called once before the first frame.
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        Default::default()
-    }
-}
-
 impl eframe::App for MinesweeperApp {
     fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
         let top_height = 42.0;
